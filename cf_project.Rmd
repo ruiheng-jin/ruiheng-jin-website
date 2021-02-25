@@ -1,0 +1,10 @@
+---
+title: "Carbon Accounting Project for Zero-Waste Grocery Store"
+output: distill::distill_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+What's the carbon footprint of a package-free grocery store? How does it compare to a conventional grocery store? These are the questions that our Bren group project attempts to answer. Stay tuned for more updates.

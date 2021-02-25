@@ -1,0 +1,84 @@
+---
+title: "ESM244-HW1-Part1"
+output: distill::distill_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+library(tidyverse)
+library(janitor)
+library(lubridate)
+library(here)
+library(readxl)
+library(patchwork)
+```
+
+
+```{r}
+amph <- read_excel("sierra_amphibians.xlsx") %>% 
+  drop_na() %>% 
+  mutate(date = ymd(survey_date)) %>% 
+  mutate(year = year(date)) %>% 
+  select(-date) 
+
+ramu <- amph %>% 
+  filter(amphibian_species == "RAMU")
+
+ramu_wo_egg <- ramu %>% 
+  filter(amphibian_life_stage %in% c("SubAdult", "Tadpole", "Adult"))
+
+ramu_wo_egg_sum <- ramu_wo_egg %>% 
+  group_by(amphibian_life_stage, year) %>% 
+  summarise(count = sum(amphibian_number))
+```
+
+```{r}
+A <- ggplot(data = ramu_wo_egg_sum, aes(x = year, y = count, pch = amphibian_life_stage)) +
+  geom_point(alpha = 0.25,
+              size = 2,
+              color = "dark green") +
+  labs(title = "Total mountain yellow-legged frog count in Sierra Nevada, 1997-2002",
+       y = "Count",
+       caption = 
+"Figure 1. This graph shows the total counts of the endangered species, mountain yellow-legged\n frog, in Sierra Nevada from 1997 to 2002. 3 life stages are included.") +
+  theme_minimal()
+```
+
+```{r}
+ramu_adu_subadu <- ramu_wo_egg %>% 
+  filter(amphibian_life_stage %in% c("SubAdult", "Adult"))
+
+ramu_adu_subadu_sum <- ramu_adu_subadu %>% 
+  group_by(lake_id) %>% 
+  summarise(count = sum(amphibian_number)) %>% 
+  filter(lake_id %in% c("50183", "10223", "10329", "20196", "10225")) %>% # manually selected the top 5 lakes...
+  mutate(lake_id = as.character(lake_id))
+```
+```{r}
+B <- ggplot(data = ramu_adu_subadu_sum, aes(x = lake_id, y = count)) +
+  geom_col() +
+  labs(title = "Top 5 lakes with highest counts of mountain yellow-legged frogs in Sierra\n Nevada, 1997-2002",
+       y = "Count",
+       x = "Lake ID",
+       caption = "Figure 2. This graph shows the total counts of mountain yellow-legged frogs, from 1997 to 2002,\n found in the 5 lakes in Sierra Nevada with the highest number of the species. Adults and\n sub-adults are included in the counts.") +
+  theme_minimal()
+```
+
+```{r}
+A / B
+```
+
+
+
+
+
+
+
+
+
+
+

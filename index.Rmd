@@ -1,0 +1,19 @@
+---
+title: "Ruiheng Jin"
+image: "ruiheng.PNG"
+site: distill::distill_website
+links:
+  - label: LinkedIn
+    url: "https://linkedin.com/"
+  - label: Twitter
+    url: "https://twitter.com/"
+  - label: GitHub
+    url: "https://github.com/"
+  - label: Email
+    url: "mailto:email@email.com"
+output:
+  postcards::jolla
+
+---
+ 
+I am an environmental management master's student at the Bren School at UCSB. My interests include carbon accounting and decarbonization in the power sector. In my free time, I like to do DIYs and skateboard.

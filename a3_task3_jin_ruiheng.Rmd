@@ -1,0 +1,133 @@
+---
+title: "And Then There Were None Text Analysis"
+output: distill::distill_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+library(tidyverse)
+library(tidytext)
+library(textdata)
+library(pdftools)
+```
+
+```{r, cache = TRUE}
+none_text <- pdf_text("and_then_there_were_none.pdf")
+```
+
+```{r}
+none_tidy <- data.frame(none_text) %>% # each line is a page
+  mutate(text_full = str_split(none_text, pattern = "\\n")) %>% # add an additional \ # each line is an element in a page element
+  unnest(text_full) %>% # each line has a line in the data frame
+  mutate(text_full=  str_trim(text_full)) # trim off excess spaces
+
+
+none_df <- none_tidy %>% 
+  slice(-1) %>% 
+  mutate(chapter = case_when(
+    str_detect(text_full, pattern = "Chapter") ~ text_full, # if has Chapter, then repeat the value in column text_full
+    TRUE ~ NA_character_ # if anything else is TRUE, then populate the new column with NA
+  )) %>% 
+  fill(chapter) %>% 
+  separate(col = chapter, into = c("ch", "no"), sep = " ") %>% 
+  mutate(chapter = as.numeric(no))
+
+none_tokens <- none_df %>% 
+  unnest_tokens(word, text_full) %>% # changing resolution from line to words
+  dplyr::select(-none_text)
+
+none_wordcount <- none_tokens %>% 
+  count(chapter, word) # after this, want to exclude "stop words"
+```
+
+```{r}
+# remove stop words
+none_nonstop_words <- none_tokens %>% 
+  anti_join(stop_words) # telling r what we don't want to include in none_tokens
+
+nonstop_count <- none_nonstop_words %>% 
+  count(chapter, word)
+
+# find top 5 words by chapter 
+top_5_words <- nonstop_count %>% 
+  group_by(chapter) %>% 
+  arrange(-n) %>% 
+  slice(1:5)
+
+ggplot(data = top_5_words, aes(x = word, y = n)) +
+  geom_col(fill = "#C74343") +
+  facet_wrap(~chapter, scales = "free") +
+  coord_flip() + 
+  labs(x = "",
+       y = "Number of occurrences",
+       title = "Most Frequently Used Words in 'And Then There Were None' \nby Chapter",
+       caption = "Christie, Agatha. 1939, And Then There Were None.") +
+  theme_minimal()+
+  theme(
+    plot.background = element_rect(fill = "#39354F", colour = NA),
+    panel.background = element_rect(fill = "#515076", colour = NA),
+    axis.text = element_text(color = "#F3CA24", size = 7),
+    title = element_text(color = "#F3CA24", size = 13),
+    panel.grid = element_line(color = "black"),
+    strip.text = element_text(color = "#F3CA24"),
+    plot.caption = element_text(size = 7))
+
+```
+
+```{r}
+# sentiment analysis
+none_afinn <- none_nonstop_words %>% 
+  inner_join(get_sentiments("afinn"))
+
+afinn_counts <- none_afinn %>% 
+  count(chapter, value)
+
+afinn_means <- none_afinn %>% 
+  group_by(chapter) %>% 
+  summarize(mean_afinn = mean(value))
+
+#ggplot(data = afinn_means, aes(x = chapter, y = mean_afinn)) +
+#  geom_col(fill = "#C74343") +
+#  coord_flip() +
+#  labs(x = "Chapter",
+#       y = "Mean sentiment value") +
+#  theme_minimal() +
+#  theme(
+#    plot.background = element_rect(fill = "#39354F", colour = NA),
+#    panel.background = element_rect(fill = "#515076", colour = NA),
+#    axis.text = element_text(color = "#F3CA24"),
+#    title = element_text(color = "#F3CA24", size = 13),
+#    panel.grid = element_line(color = "black"),
+#    strip.text = element_text(color = "#F3CA24"))
+```
+
+```{r}
+none_nrc <- none_nonstop_words %>% 
+  inner_join(get_sentiments("nrc"))
+
+none_nrc_count <- none_nrc %>% 
+  count(chapter, sentiment)
+
+ggplot(data = none_nrc_count, aes(x = sentiment, y = n)) +
+  geom_col(fill = "#C74343") +
+  facet_wrap(~chapter) +
+  coord_flip() + 
+  labs(y = "Number of occurrences",
+       x = "Sentiment",
+       title = "Sentiment Analysis for 'And Then There Were None' \nby Chapter",
+       caption = "Christie, Agatha. 1939, And Then There Were None.") +
+  theme_minimal()+
+  theme(
+    plot.background = element_rect(fill = "#39354F", colour = NA),
+    panel.background = element_rect(fill = "#515076", colour = NA),
+    axis.text = element_text(color = "#F3CA24", size = 7),
+    title = element_text(color = "#F3CA24", size = 13),
+    panel.grid = element_line(color = "black"),
+    strip.text = element_text(color = "#F3CA24"),
+    plot.caption = element_text(size = 7))
+```
+
